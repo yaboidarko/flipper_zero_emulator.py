@@ -1,10 +1,15 @@
 import os
 import subprocess
+import time
+import signal
+import sys
 
-def run_command(command):
+def run_command(command, timeout=60):
     try:
-        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True, timeout=timeout)
         print(result.stdout)
+    except subprocess.TimeoutExpired:
+        print(f"Command '{command}' timed out after {timeout} seconds")
     except subprocess.CalledProcessError as e:
         print(e.stderr)
 
@@ -13,7 +18,7 @@ def install_dependencies():
     dependencies = [
         "python", "git", "nmap", "termux-api", "tsu", "wget", "curl", "openssh", "figlet", 
         "toilet", "hydra", "metasploit", "wireshark", "aircrack-ng", "reaver", "wifite", 
-        "whois", "dnsutils", "net-tools", "iw", "nano", "pip"
+        "whois", "dnsutils", "net-tools", "iw", "nano", "bluez"
     ]
     
     for package in dependencies:
@@ -27,7 +32,7 @@ def check_dependencies():
     dependencies = [
         "python", "git", "nmap", "termux-api", "tsu", "wget", "curl", "openssh", "figlet", 
         "toilet", "hydra", "metasploit", "wireshark", "aircrack-ng", "reaver", "wifite", 
-        "whois", "dnsutils", "net-tools", "iw", "nano"
+        "whois", "dnsutils", "net-tools", "iw", "nano", "bluez"
     ]
     
     for package in dependencies:
@@ -37,6 +42,7 @@ def check_dependencies():
     
     if missing_dependencies:
         print(f"Missing dependencies: {', '.join(missing_dependencies)}")
+        install_dependencies()
     else:
         print("All dependencies are installed.")
 
@@ -73,6 +79,7 @@ def geolocation():
     print(f"Latitude: {location.latitude}, Longitude: {location.longitude}")
 
 def weather_information():
+    import requests
     city = input("Enter the city name: ")
     api_key = "YOUR_OPENWEATHERMAP_API_KEY"  # Replace with your OpenWeatherMap API key
     base_url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}"
@@ -112,20 +119,30 @@ def wireless_security():
 def bluetooth_scan():
     run_command("termux-bluetooth-scan")
 
+def exit_gracefully(signum, frame):
+    print("\nExiting gracefully...")
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, exit_gracefully)
+signal.signal(signal.SIGTERM, exit_gracefully)
+
 def menu():
     while True:
-        print("\nCyberdeck Menu:")
-        print("1. Install Dependencies")
-        print("2. Check Dependencies")
-        print("3. Wi-Fi Scanner")
-        print("4. Network Scanner")
-        print("5. Geolocation")
-        print("6. Weather Information")
-        print("7. RFID/NFC Scanner")
-        print("8. Password Cracking")
-        print("9. Wireless Security")
-        print("10. Bluetooth Scanner")
-        print("11. Exit")
+        print("\n╔══════════════════════════════════════════════════════════╗")
+        print("║                      Cyberdeck Menu                      ║")
+        print("╠══════════════════════════════════════════════════════════╣")
+        print("║  1. Install Dependencies                                 ║")
+        print("║  2. Check Dependencies                                   ║")
+        print("║  3. Wi-Fi Scanner                                        ║")
+        print("║  4. Network Scanner                                      ║")
+        print("║  5. Geolocation                                          ║")
+        print("║  6. Weather Information                                  ║")
+        print("║  7. RFID/NFC Scanner                                     ║")
+        print("║  8. Password Cracking                                    ║")
+        print("║  9. Wireless Security                                    ║")
+        print("║ 10. Bluetooth Scanner                                    ║")
+        print("║ 11. Exit                                                 ║")
+        print("╚══════════════════════════════════════════════════════════╝")
         
         choice = input("Enter your choice: ")
         
