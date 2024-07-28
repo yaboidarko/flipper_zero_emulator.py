@@ -1,24 +1,55 @@
 import os
-import requests
-from scapy.all import *
-from geopy.geocoders import Nominatim
+import subprocess
+
+def run_command(command):
+    try:
+        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+        print(result.stdout)
+    except subprocess.CalledProcessError as e:
+        print(e.stderr)
 
 def install_dependencies():
     print("Installing dependencies...")
-    os.system("pkg update && pkg upgrade -y")
-    os.system("pkg install python git nmap termux-api tsu wget curl openssh figlet toilet hydra metasploit wireshark aircrack-ng reaver wifite whois dnsutils net-tools iw -y")
-    os.system("pip install requests scapy geopy nmap")
+    dependencies = [
+        "python", "git", "nmap", "termux-api", "tsu", "wget", "curl", "openssh", "figlet", 
+        "toilet", "hydra", "metasploit", "wireshark", "aircrack-ng", "reaver", "wifite", 
+        "whois", "dnsutils", "net-tools", "iw", "nano", "pip"
+    ]
+    
+    for package in dependencies:
+        run_command(f"pkg install -y {package}")
+        
+    run_command("pip install requests scapy geopy nmap")
+
+def check_dependencies():
+    print("Checking dependencies...")
+    missing_dependencies = []
+    dependencies = [
+        "python", "git", "nmap", "termux-api", "tsu", "wget", "curl", "openssh", "figlet", 
+        "toilet", "hydra", "metasploit", "wireshark", "aircrack-ng", "reaver", "wifite", 
+        "whois", "dnsutils", "net-tools", "iw", "nano"
+    ]
+    
+    for package in dependencies:
+        result = subprocess.run(f"pkg list-installed | grep {package}", shell=True, capture_output=True, text=True)
+        if package not in result.stdout:
+            missing_dependencies.append(package)
+    
+    if missing_dependencies:
+        print(f"Missing dependencies: {', '.join(missing_dependencies)}")
+    else:
+        print("All dependencies are installed.")
 
 def wifi_scan():
     print("Scanning for Wi-Fi networks...")
-    os.system("termux-wifi-scaninfo")
+    run_command("termux-wifi-scaninfo")
 
 def network_scan():
     try:
         import nmap
     except ImportError:
         print("nmap module not found. Installing...")
-        os.system("pip install nmap")
+        run_command("pip install nmap")
         import nmap
 
     nm = nmap.PortScanner()
@@ -35,6 +66,7 @@ def network_scan():
                 print(f'Port: {port}\tState: {nm[host][proto][port]["state"]}')
 
 def geolocation():
+    from geopy.geocoders import Nominatim
     geolocator = Nominatim(user_agent="geoapiExercises")
     location = geolocator.geocode(input("Enter a location: "))
     print(location.address)
@@ -59,62 +91,65 @@ def weather_information():
 
 def rfid_scan():
     print("Scanning for RFID/NFC tags...")
-    os.system("termux-nfc")
+    run_command("termux-nfc")
 
 def password_crack():
     target = input("Enter the target IP: ")
     service = input("Enter the service (e.g., ssh, ftp): ")
     username = input("Enter the username: ")
     wordlist = input("Enter the path to the wordlist: ")
-    os.system(f"hydra -l {username} -P {wordlist} {service}://{target}")
+    run_command(f"hydra -l {username} -P {wordlist} {service}://{target}")
 
 def wireless_security():
-    os.system("airmon-ng start wlan0")
-    os.system("airodump-ng wlan0mon")
+    run_command("airmon-ng start wlan0")
+    run_command("airodump-ng wlan0mon")
     bssid = input("Enter the BSSID of the target: ")
     channel = input("Enter the channel of the target: ")
-    os.system(f"airodump-ng -c {channel} --bssid {bssid} -w capture wlan0mon")
-    os.system(f"aireplay-ng --deauth 0 -a {bssid} wlan0mon")
-    os.system("aircrack-ng -w wordlist.txt capture*.cap")
+    run_command(f"airodump-ng -c {channel} --bssid {bssid} -w capture wlan0mon")
+    run_command(f"aireplay-ng --deauth 0 -a {bssid} wlan0mon")
+    run_command("aircrack-ng -w wordlist.txt capture*.cap")
 
 def bluetooth_scan():
-    os.system("termux-bluetooth-scan")
+    run_command("termux-bluetooth-scan")
 
 def menu():
     while True:
         print("\nCyberdeck Menu:")
         print("1. Install Dependencies")
-        print("2. Wi-Fi Scanner")
-        print("3. Network Scanner")
-        print("4. Geolocation")
-        print("5. Weather Information")
-        print("6. RFID/NFC Scanner")
-        print("7. Password Cracking")
-        print("8. Wireless Security")
-        print("9. Bluetooth Scanner")
-        print("10. Exit")
+        print("2. Check Dependencies")
+        print("3. Wi-Fi Scanner")
+        print("4. Network Scanner")
+        print("5. Geolocation")
+        print("6. Weather Information")
+        print("7. RFID/NFC Scanner")
+        print("8. Password Cracking")
+        print("9. Wireless Security")
+        print("10. Bluetooth Scanner")
+        print("11. Exit")
         
         choice = input("Enter your choice: ")
         
         if choice == '1':
             install_dependencies()
         elif choice == '2':
-            wifi_scan()
+            check_dependencies()
         elif choice == '3':
-            network_scan()
+            wifi_scan()
         elif choice == '4':
-            geolocation()
+            network_scan()
         elif choice == '5':
-            weather_information()
+            geolocation()
         elif choice == '6':
-            rfid_scan()
+            weather_information()
         elif choice == '7':
-            password_crack()
+            rfid_scan()
         elif choice == '8':
-            wireless_security()
+            password_crack()
         elif choice == '9':
-            bluetooth_scan()
+            wireless_security()
         elif choice == '10':
+            bluetooth_scan()
+        elif choice == '11':
             break
         else:
             print("Invalid choice. Please try again.")
