@@ -3,6 +3,9 @@ import subprocess
 import time
 import signal
 import sys
+import requests
+from geopy.geocoders import Nominatim
+import nmap
 
 def run_command(command, timeout=60):
     try:
@@ -18,13 +21,13 @@ def install_dependencies():
     dependencies = [
         "python", "git", "nmap", "termux-api", "tsu", "wget", "curl", "openssh", "figlet", 
         "toilet", "hydra", "metasploit", "wireshark", "aircrack-ng", "reaver", "wifite", 
-        "whois", "dnsutils", "net-tools", "iw", "nano", "bluez"
+        "whois", "dnsutils", "net-tools", "iw", "nano", "bluez", "nfc-utils", "libnfc-bin"
     ]
     
     for package in dependencies:
         run_command(f"pkg install -y {package}")
         
-    run_command("pip install requests scapy geopy nmap")
+    run_command("pip install requests scapy geopy python-nmap")
 
 def check_dependencies():
     print("Checking dependencies...")
@@ -32,7 +35,7 @@ def check_dependencies():
     dependencies = [
         "python", "git", "nmap", "termux-api", "tsu", "wget", "curl", "openssh", "figlet", 
         "toilet", "hydra", "metasploit", "wireshark", "aircrack-ng", "reaver", "wifite", 
-        "whois", "dnsutils", "net-tools", "iw", "nano", "bluez"
+        "whois", "dnsutils", "net-tools", "iw", "nano", "bluez", "nfc-utils", "libnfc-bin"
     ]
     
     for package in dependencies:
@@ -51,13 +54,6 @@ def wifi_scan():
     run_command("termux-wifi-scaninfo")
 
 def network_scan():
-    try:
-        import nmap
-    except ImportError:
-        print("nmap module not found. Installing...")
-        run_command("pip install nmap")
-        import nmap
-
     nm = nmap.PortScanner()
     target = input("Enter the target IP address or network (e.g., 192.168.1.1/24): ")
     nm.scan(target)
@@ -72,17 +68,16 @@ def network_scan():
                 print(f'Port: {port}\tState: {nm[host][proto][port]["state"]}')
 
 def geolocation():
-    from geopy.geocoders import Nominatim
     geolocator = Nominatim(user_agent="geoapiExercises")
     location = geolocator.geocode(input("Enter a location: "))
     print(location.address)
     print(f"Latitude: {location.latitude}, Longitude: {location.longitude}")
 
 def weather_information():
-    import requests
-    city = input("Enter the city name: ")
+    city = "Winter Park"
+    zip_code = "32792"
     api_key = "YOUR_OPENWEATHERMAP_API_KEY"  # Replace with your OpenWeatherMap API key
-    base_url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}"
+    base_url = f"http://api.openweathermap.org/data/2.5/weather?zip={zip_code},us&appid={api_key}"
     response = requests.get(base_url)
     data = response.json()
     if data["cod"] != "404":
@@ -98,7 +93,12 @@ def weather_information():
 
 def rfid_scan():
     print("Scanning for RFID/NFC tags...")
-    run_command("termux-nfc")
+    run_command("nfc-scan-device")
+
+def rfid_write():
+    tag_id = input("Enter the tag ID to write: ")
+    data = input("Enter the data to write: ")
+    run_command(f"nfc-mfclassic w a {tag_id} data.bin")
 
 def password_crack():
     target = input("Enter the target IP: ")
@@ -117,34 +117,33 @@ def wireless_security():
     run_command("aircrack-ng -w wordlist.txt capture*.cap")
 
 def bluetooth_scan():
-    run_command("termux-bluetooth-scan")
+    print("Scanning for Bluetooth devices...")
+    run_command("hcitool scan")
 
-def exit_gracefully(signum, frame):
-    print("\nExiting gracefully...")
-    sys.exit(0)
+def show_menu():
+    menu = """
+    Cyberdeck Utility Menu
+    ======================
+    1. Install Dependencies
+    2. Check Dependencies
+    3. Wi-Fi Scan
+    4. Network Scan
+    5. Geolocation
+    6. Weather Information
+    7. RFID/NFC Scan
+    8. RFID/NFC Write
+    9. Password Crack
+    10. Wireless Security
+    11. Bluetooth Scan
+    12. Exit
+    ======================
+    """
+    print(menu)
 
-signal.signal(signal.SIGINT, exit_gracefully)
-signal.signal(signal.SIGTERM, exit_gracefully)
-
-def menu():
+def main():
     while True:
-        print("\n╔══════════════════════════════════════════════════════════╗")
-        print("║                      Cyberdeck Menu                      ║")
-        print("╠══════════════════════════════════════════════════════════╣")
-        print("║  1. Install Dependencies                                 ║")
-        print("║  2. Check Dependencies                                   ║")
-        print("║  3. Wi-Fi Scanner                                        ║")
-        print("║  4. Network Scanner                                      ║")
-        print("║  5. Geolocation                                          ║")
-        print("║  6. Weather Information                                  ║")
-        print("║  7. RFID/NFC Scanner                                     ║")
-        print("║  8. Password Cracking                                    ║")
-        print("║  9. Wireless Security                                    ║")
-        print("║ 10. Bluetooth Scanner                                    ║")
-        print("║ 11. Exit                                                 ║")
-        print("╚══════════════════════════════════════════════════════════╝")
-        
-        choice = input("Enter your choice: ")
+        show_menu()
+        choice = input("Select an option: ")
         
         if choice == '1':
             install_dependencies()
@@ -161,15 +160,18 @@ def menu():
         elif choice == '7':
             rfid_scan()
         elif choice == '8':
-            password_crack()
+            rfid_write()
         elif choice == '9':
-            wireless_security()
+            password_crack()
         elif choice == '10':
-            bluetooth_scan()
+            wireless_security()
         elif choice == '11':
+            bluetooth_scan()
+        elif choice == '12':
+            print("Exiting...")
             break
         else:
             print("Invalid choice. Please try again.")
 
 if __name__ == "__main__":
-    menu()
+    main()
