@@ -11,6 +11,7 @@ def install_dependencies():
     os.system("pip install requests scapy geopy")
 
 def wifi_scan():
+    print("Scanning for Wi-Fi networks...")
     os.system("termux-wifi-scaninfo")
 
 def network_scan():
@@ -35,7 +36,7 @@ def geolocation():
 
 def weather_information():
     city = input("Enter the city name: ")
-    api_key = "YOUR_OPENWEATHERMAP_API_KEY"
+    api_key = "YOUR_OPENWEATHERMAP_API_KEY"  # Replace with your OpenWeatherMap API key
     base_url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}"
     response = requests.get(base_url)
     data = response.json()
